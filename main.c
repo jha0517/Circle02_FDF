@@ -2,96 +2,100 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <math.h>
 
-void ft_putchar(char c)
-{
-	write(1, &c, 1);
-}
-int key_press(int key, void *param)
-{
-	printf("key press\n");
-	return (0);
-}
-int key_release(int key, void *param)
-{
-	printf("key release\n");
-	return (0);
-}
+typedef struct s_data{
+	void	*img;
+	char	*addr;
+	int		bits_per_pixel;
+	int		line_length;
+	int		endian;
+}	t_data;
 
-int mouse_press(int key, void *param)
+void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
 {
-	printf("mouse press\n");
-	return (0);
-}
-int mouse_release(int key, void *param)
-{
-	printf("mouse release\n");
-	return (0);
-}
-int mouse_move(int key, void *param)
-{
-	//printf("move\n");
-	return (0);
-}
-int expose(int key, void *param)
-{
-	printf("expose\n");
-	return (0);
+	char	*offset;
+
+	offset = data->addr + (y * data->line_length + x * (data->bits_per_pixel / 8));
+	printf ("line_length %i\n", data->line_length);
+	printf ("bits_per_pixel %i\n", data->bits_per_pixel);
+
+	*(unsigned int*)offset = color;
 }
 
-void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr)
+void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t_data *data)
 {
 	int	x = x1;
 	int	y = y1;
 	int dx;
 	int	dy;
-	int p;
-	int m;
+	float p;
+	int xvalue;
+	int yvalue;
 
 	dx = x2-x1;
 	dy = y2-y1;
-	p = 2 * dy - dx;
-	m = dy / dx;
-	printf("dx : %i, dy : %i, p : %i, m : %i\n", dx, dy, p, m);
-	// if (dx < 0)
-	// {
-	// 	m *= -1;
 
-	// }
-	// //if ()
-	if (m == 0)
+	if (dx < 0)
 	{
-		while (x <= x2)
+			xvalue = -1;
+			dx *= -1;
+			printf("x negative\n");
+	}
+	else
+		xvalue = 1;
+	if (dy < 0)
+	{
+		yvalue = -1;
+		dy *= -1;
+			printf("y negative\n");
+	}
+	else
+		yvalue = 1;
+	p = 2 * dy - dx;
+	if (dx > dy)
+	{
+		while (x != x2)
 		{
-			printf("if1, x : %i, y : %i, p : %i\n", x, y, p);
-			mlx_pixel_put(mlx_ptr, win_ptr, x, y, 0x00FFFFFF);		
-			x++;
+			//mlx_pixel_put(mlx_ptr, win_ptr, x, y, 0x00FFFFFF);
+			my_mlx_pixel_put(data, x, y, 0x00FFFFFF);		
+			x+= xvalue;
 			if (p < 0)
 				p = p + (2 * dy);
 			else
 			{
 				p = p + (2 * dy) - (2 * dx);
-				y++;
+				y+= yvalue;
 			}
 		}
 	}
-	else if (m > 0)
+	else
 	{
-		while (y <= y2)
+		while (y != y2)
 		{
-			printf("if2, x : %i, y : %i, p : %i\n", x, y, p);
-			mlx_pixel_put(mlx_ptr, win_ptr, x, y, 0x00FFFFFF);		
-			y++;
+			//mlx_pixel_put(mlx_ptr, win_ptr, x, y, 0x00FFFFFF);
+			my_mlx_pixel_put(data, x, y, 0x00FFFFFF);		
+			y+= yvalue;
 			if (p < 0)
 				p = p + (2 * dx);
 			else
 			{
 				p = p + (2 * dx) - (2 * dy);
-				x++;
+				x+= xvalue;
 			}
 		}
 	}
 }
+void draw_iso(int x1, int y1, int height, void *mlx_ptr, void *win_ptr, t_data img, int end1, int end2)
+{
+	draw_line(x1, y1, x1 + height, y1 + (height/2), mlx_ptr, win_ptr, &img);
+	if (end2 == 1)
+		draw_line(x1 + height, y1+(height/2), x1, y1+height, mlx_ptr, win_ptr, &img);
+	if (end1 == 1)
+		draw_line(x1, y1+height, x1-height, y1+(height/2), mlx_ptr, win_ptr, &img);
+	draw_line(x1-height, y1+(height/2), x1, y1, mlx_ptr, win_ptr, &img);
+}
+
 int	main()
 {
 	void	*mlx_ptr;
@@ -103,12 +107,13 @@ int	main()
 	int		rt;
 	int		iso_height;
 	int		iso_width = 50;
-	int		window_wigth = 500;
-	int		widow_height = 400;
+	int		window_wigth = 1000;
+	int		widow_height = 800;
+	t_data	img;
 
 	iso_height = iso_width / 2;
 	x1 = window_wigth / 2;
-	y1 = 0;
+	y1 = widow_height / 2;
 
 	mlx_ptr = mlx_init();
 	if (!mlx_ptr)
@@ -116,22 +121,15 @@ int	main()
 	win_ptr = mlx_new_window(mlx_ptr, window_wigth, widow_height, "hello");
 	if (!win_ptr)
 		return (0);
-	x2 = x1 - 100;
-	y2 = y1 + 50;
-	printf ("x2 : %i, y2 : %i\n", x2, y2);
-	draw_line(x1, y1, x2, y2, mlx_ptr, win_ptr);
-	// x2 = x1 - 2 * size;
-	// y2 = y1 + size;
-	// draw_line(x1, y1, x2, y2, mlx_ptr, win_ptr);
-	
+	int size = 150;
+	img.img = mlx_new_image(mlx_ptr, window_wigth, widow_height );
+	img.addr = mlx_get_data_addr(img.img, &img.bits_per_pixel, &img.line_length, &img.endian);
+	draw_iso(x1, y1, size, mlx_ptr, win_ptr,img, 1, 0);
+	draw_iso(x1+size, y1+size/2,size, mlx_ptr, win_ptr,img, 1, 1);
+	//draw_iso(x1, y1+size, size, mlx_ptr, win_ptr,img);
 
-	//mlx_hook(win_ptr, 2, 0, key_press, (void *)0);
-	//mlx_hook(win_ptr, 3, 0, key_release, (void *)0);
-	//mlx_hook(win_ptr, 4, 0, mouse_press, (void *)0);
-	//mlx_hook(win_ptr, 5, 0, mouse_release, (void *)0);
-	//mlx_hook(win_ptr, 6, 0, mouse_move, (void *)0);
-	//mlx_hook(win_ptr, 12, 0, expose, (void *)0);
+	mlx_put_image_to_window(mlx_ptr, win_ptr, img.img, 0,0);
 
+	printf("test");
 	mlx_loop(mlx_ptr);
-	//mlx_destroy_window(mlx_ptr, win_ptr);
 }
