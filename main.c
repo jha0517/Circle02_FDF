@@ -12,14 +12,23 @@ typedef struct s_data{
 	int		endian;
 }	t_data;
 
+typedef struct s_vector2{
+	float x;
+	float y;
+}	vector2;
+
+vector2 add_vector2(vector2 a, vector2 b)
+{
+	vector2 r;
+	r.x = a.x + b.x;
+	r.y = a.y + b.y;
+	return r;
+}
 void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
 {
 	char	*offset;
 
 	offset = data->addr + (y * data->line_length + x * (data->bits_per_pixel / 8));
-	printf ("line_length %i\n", data->line_length);
-	printf ("bits_per_pixel %i\n", data->bits_per_pixel);
-
 	*(unsigned int*)offset = color;
 }
 
@@ -57,7 +66,6 @@ void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t
 	{
 		while (x != x2)
 		{
-			//mlx_pixel_put(mlx_ptr, win_ptr, x, y, 0x00FFFFFF);
 			my_mlx_pixel_put(data, x, y, 0x00FFFFFF);		
 			x+= xvalue;
 			if (p < 0)
@@ -73,7 +81,6 @@ void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t
 	{
 		while (y != y2)
 		{
-			//mlx_pixel_put(mlx_ptr, win_ptr, x, y, 0x00FFFFFF);
 			my_mlx_pixel_put(data, x, y, 0x00FFFFFF);		
 			y+= yvalue;
 			if (p < 0)
@@ -86,14 +93,24 @@ void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t
 		}
 	}
 }
-void draw_iso(int x1, int y1, int height, void *mlx_ptr, void *win_ptr, t_data img, int end1, int end2)
+void draw_iso(int x1, int y1, int r, void *mlx_ptr, void *win_ptr, t_data img, int end1, int end2)
 {
-	draw_line(x1, y1, x1 + height, y1 + (height/2), mlx_ptr, win_ptr, &img);
-	if (end2 == 1)
-		draw_line(x1 + height, y1+(height/2), x1, y1+height, mlx_ptr, win_ptr, &img);
+	int h;
+	int w;
+	h = r * sin(26.6 * M_PI / 180);
+	w = r * cos(26.6 * M_PI / 180);
+	printf("%i, %i\n", h, w);
+	draw_line(x1, y1, x1 + w/2, y1 + h/2, mlx_ptr, win_ptr, &img);
 	if (end1 == 1)
-		draw_line(x1, y1+height, x1-height, y1+(height/2), mlx_ptr, win_ptr, &img);
-	draw_line(x1-height, y1+(height/2), x1, y1, mlx_ptr, win_ptr, &img);
+		draw_line(x1 + w/2, y1 + h/2, x1, y1 + h, mlx_ptr, win_ptr, &img);
+	if (end1 == 1)
+		draw_line(x1, y1 + h, x1 - w/2, y1 + h/2, mlx_ptr, win_ptr, &img);
+	draw_line(x1 - w/2, y1 + h/2, x1, y1, mlx_ptr, win_ptr, &img);
+	// //if (end2 == 1)
+	// draw_line(x1 + r, y1+(r/2), x1, y1+r, mlx_ptr, win_ptr, &img);
+	// //if (end1 == 1)
+	// draw_line(x1, y1+r, x1-r, y1+(r/2), mlx_ptr, win_ptr, &img);
+	// draw_line(x1-r, y1+(r/2), x1, y1, mlx_ptr, win_ptr, &img);
 }
 
 int	main()
@@ -105,13 +122,10 @@ int	main()
 	int		x2;
 	int		y2;
 	int		rt;
-	int		iso_height;
-	int		iso_width = 50;
 	int		window_wigth = 1000;
 	int		widow_height = 800;
 	t_data	img;
-
-	iso_height = iso_width / 2;
+	int edge = 100;
 	x1 = window_wigth / 2;
 	y1 = widow_height / 2;
 
@@ -121,12 +135,10 @@ int	main()
 	win_ptr = mlx_new_window(mlx_ptr, window_wigth, widow_height, "hello");
 	if (!win_ptr)
 		return (0);
-	int size = 150;
+	int size = 200;
 	img.img = mlx_new_image(mlx_ptr, window_wigth, widow_height );
 	img.addr = mlx_get_data_addr(img.img, &img.bits_per_pixel, &img.line_length, &img.endian);
 	draw_iso(x1, y1, size, mlx_ptr, win_ptr,img, 1, 0);
-	draw_iso(x1+size, y1+size/2,size, mlx_ptr, win_ptr,img, 1, 1);
-	//draw_iso(x1, y1+size, size, mlx_ptr, win_ptr,img);
 
 	mlx_put_image_to_window(mlx_ptr, win_ptr, img.img, 0,0);
 
