@@ -6,24 +6,20 @@
 
 typedef struct s_data{
 	void	*img;
+	int		window_wigth;
+	int		widow_height;
 	char	*addr;
 	int		bits_per_pixel;
 	int		line_length;
 	int		endian;
 }	t_data;
 
-typedef struct s_vector2{
-	float x;
-	float y;
-}	vector2;
+typedef struct s_vector3{
+	int	x;
+	int	y;
+	int	z;
+} t_vector3;
 
-vector2 add_vector2(vector2 a, vector2 b)
-{
-	vector2 r;
-	r.x = a.x + b.x;
-	r.y = a.y + b.y;
-	return r;
-}
 void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
 {
 	char	*offset;
@@ -49,7 +45,7 @@ void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t
 	{
 			xvalue = -1;
 			dx *= -1;
-			printf("x negative\n");
+			// printf("x negative\n");
 	}
 	else
 		xvalue = 1;
@@ -57,7 +53,7 @@ void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t
 	{
 		yvalue = -1;
 		dy *= -1;
-			printf("y negative\n");
+			// printf("y negative\n");
 	}
 	else
 		yvalue = 1;
@@ -93,55 +89,124 @@ void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t
 		}
 	}
 }
-void draw_iso(int x1, int y1, int r, void *mlx_ptr, void *win_ptr, t_data img, int end1, int end2)
+float get_origin_x(int x, int z, int r)
 {
-	int h;
-	int w;
-	h = r * sin(26.6 * M_PI / 180);
-	w = r * cos(26.6 * M_PI / 180);
-	printf("%i, %i\n", h, w);
-	draw_line(x1, y1, x1 + w/2, y1 + h/2, mlx_ptr, win_ptr, &img);
-	if (end1 == 1)
-		draw_line(x1 + w/2, y1 + h/2, x1, y1 + h, mlx_ptr, win_ptr, &img);
-	if (end1 == 1)
-		draw_line(x1, y1 + h, x1 - w/2, y1 + h/2, mlx_ptr, win_ptr, &img);
-	draw_line(x1 - w/2, y1 + h/2, x1, y1, mlx_ptr, win_ptr, &img);
-	// //if (end2 == 1)
-	// draw_line(x1 + r, y1+(r/2), x1, y1+r, mlx_ptr, win_ptr, &img);
-	// //if (end1 == 1)
-	// draw_line(x1, y1+r, x1-r, y1+(r/2), mlx_ptr, win_ptr, &img);
-	// draw_line(x1-r, y1+(r/2), x1, y1, mlx_ptr, win_ptr, &img);
+	return (x - z) * cos(26.565 * M_PI / 180) * r;
+}
+float get_origin_y(int x, int z, int height, int r)
+{
+	return ((x + z + 1) * sin(26.565 * M_PI / 180) - height) * r;
 }
 
+float get_screen_x(int x, int z, int r)
+{
+	return (x - z) * cos(26.565 * M_PI / 180) * r;
+}
+float get_screen_y(int x, int z, int height, int r)
+{
+	return ((x + z) * sin(26.565 * M_PI / 180) - height) * r;
+}
+
+void convert_world_to_screen(t_vector3 v1, t_vector3 v2,int r, void * mlx_ptr, void * win_ptr, t_data *data)
+{
+	int fromxs;
+	int fromys;
+	int toxs;
+	int toys;
+	int xc;
+	int yc;
+	int offset = 150;
+	xc = data->window_wigth / 2;
+	yc = data->widow_height / 2;
+	printf ("v1.y %i, v2.y:%i\n", v1.y, v2.y);
+	fromxs = get_screen_x(v1.x, v1.z, r) - get_origin_x(0, 0, r) + xc;
+	fromys = get_screen_y(v1.x, v1.z, v1.y, r) - get_origin_y(0, 0, 1, r) + yc;
+	toxs = get_screen_x(v2.x, v2.z, r) - get_origin_x(0, 0, r) + xc;
+	toys = get_screen_y(v2.x, v2.z, v2.y, r) - get_origin_y(0, 0, 1, r) + yc;
+	printf ("from : %d, %d to : %d, %d\n", fromxs, fromys, toxs,toys);
+	draw_line(fromxs,fromys, toxs,toys, mlx_ptr, win_ptr, data);
+}
+
+
+void iterate_entire_iso(int x, int y, int r, void* mlx_ptr, void* win_ptr, t_data *data)
+{
+	int i = 0;
+	int j = 0;
+	t_vector3	v1;
+	t_vector3	v2;
+	// printf("go");
+	while (j <= y)
+	{
+		i = 0;
+		printf ("\tnew x\n");
+		while (i <= x)
+		{
+			if (j + 1 <= y)
+			{	
+				 printf("(1 : %i, %i) -> (%i, %i)\n", i, j, i, j+1);
+				v1.x = i;
+				v1.z = j;
+				v1.y = 1;
+				v2.x = i;
+				v2.y = 1;
+				v2.z = j + 1;
+				if(i ==1 && j ==1 )
+				{
+					v1.y = 2;
+				}
+				if(i ==1 && j+1 ==1 )
+				{
+					v2.y = 2;
+				}
+
+				convert_world_to_screen(v1, v2, r, mlx_ptr, win_ptr, data);
+			}
+			if (i + 1 <= x)
+			{
+				 printf("(2 : %i, %i) -> (%i, %i)\n", i, j, i + 1, j);
+				v1.x = i;
+				v1.z = j;
+				v1.y = 1;
+				v2.x = i + 1;
+				v2.y = 1;
+				v2.z = j;
+				if(i ==1 && j == 1)
+				{
+					v1.y =2;
+				}
+				if(i+1 ==1 && j == 1)
+				{
+					v2.y =2;
+				}
+				convert_world_to_screen(v1, v2, r, mlx_ptr, win_ptr, data);
+			}
+			i += 1;
+		}
+		j += 1;
+	}
+}
 int	main()
 {
 	void	*mlx_ptr;
 	void	*win_ptr;
 	int		x1;
 	int		y1;
-	int		x2;
-	int		y2;
-	int		rt;
-	int		window_wigth = 1000;
-	int		widow_height = 800;
 	t_data	img;
-	int edge = 100;
-	x1 = window_wigth / 2;
-	y1 = widow_height / 2;
+	int edgel = 47;
+
+	img.window_wigth = 500;
+	img.widow_height = 500;
 
 	mlx_ptr = mlx_init();
 	if (!mlx_ptr)
 		return (0);
-	win_ptr = mlx_new_window(mlx_ptr, window_wigth, widow_height, "hello");
+	win_ptr = mlx_new_window(mlx_ptr, img.window_wigth, img.widow_height, "hello");
 	if (!win_ptr)
 		return (0);
-	int size = 200;
-	img.img = mlx_new_image(mlx_ptr, window_wigth, widow_height );
+	img.img = mlx_new_image(mlx_ptr, img.window_wigth, img.widow_height );
 	img.addr = mlx_get_data_addr(img.img, &img.bits_per_pixel, &img.line_length, &img.endian);
-	draw_iso(x1, y1, size, mlx_ptr, win_ptr,img, 1, 0);
-
+	iterate_entire_iso(2, 2, edgel, mlx_ptr, win_ptr, &img);
+	
 	mlx_put_image_to_window(mlx_ptr, win_ptr, img.img, 0,0);
-
-	printf("test");
 	mlx_loop(mlx_ptr);
 }
