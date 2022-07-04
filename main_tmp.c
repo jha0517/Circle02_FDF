@@ -22,7 +22,7 @@ void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
 	*(unsigned int*)offset = color;
 }
 
-int	main()
+int	maindd()
 {
 	void	*mlx;
 	void 	*mlx_win;
