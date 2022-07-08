@@ -15,15 +15,18 @@ typedef struct s_data{
 	int		bits_per_pixel;
 	int		line_length;
 	int		endian;
+	int		edgel;
 	int		row;
 	int		col;
+	int	elevation;
 }	t_data;
 
-typedef struct s_vector3{
-	int	x;
-	int	y;
-	int	z;
-} t_vector3;
+typedef struct s_dot{
+	int		row;
+	float	height;
+	int		col;
+	int		color;
+} t_dot;
 
 void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
 {
@@ -33,7 +36,7 @@ void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
 	*(unsigned int*)offset = color;
 }
 
-void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t_data *data)
+void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t_data *data, int color)
 {
 	int	x = x1;
 	int	y = y1;
@@ -67,7 +70,7 @@ void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t
 	{
 		while (x != x2)
 		{
-			my_mlx_pixel_put(data, x, y, 0x00FFFFFF);		
+			my_mlx_pixel_put(data, x, y, color);		
 			x+= xvalue;
 			if (p < 0)
 				p = p + (2 * dy);
@@ -82,7 +85,7 @@ void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t
 	{
 		while (y != y2)
 		{
-			my_mlx_pixel_put(data, x, y, 0x00FFFFFF);		
+			my_mlx_pixel_put(data, x, y, color);		
 			y+= yvalue;
 			if (p < 0)
 				p = p + (2 * dx);
@@ -96,23 +99,23 @@ void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t
 }
 float get_origin_x(int x, int z, int r)
 {
-	return (x - z) * cos(26.565 * M_PI / 180) * r;
+	return (x - z) * cos(26.567 * M_PI / 180) * r;
 }
 float get_origin_y(int x, int z, int height, int r)
 {
-	return ((x + z + 1) * sin(26.565 * M_PI / 180) - height) * r;
+	return (((x + z + 1) * sin(26.567 * M_PI / 180) - height) * r);
 }
 
-float get_screen_x(int x, int z, int r)
+float get_screen_x(int col, int row, int r)
 {
-	return (x - z) * cos(26.565 * M_PI / 180) * r;
+	return (col - row) * cos(26.567 * M_PI / 180) * r;
 }
-float get_screen_y(int x, int z, int height, int r)
+float get_screen_y(int col, int row, int height, int r)
 {
-	return ((x + z) * sin(26.565 * M_PI / 180) - height) * r;
+	return (((col + row) * sin(26.567 * M_PI / 180)) * r) - height;
 }
 
-void convert_world_to_screen(t_vector3 v1, t_vector3 v2,int r, void * mlx_ptr, void * win_ptr, t_data *data)
+void convert_world_to_screen(t_dot v1, t_dot v2,int r, void * mlx_ptr, void * win_ptr, t_data *data)
 {
 	int fromxs;
 	int fromys;
@@ -124,72 +127,65 @@ void convert_world_to_screen(t_vector3 v1, t_vector3 v2,int r, void * mlx_ptr, v
 	xc = data->window_wigth / 2;
 	yc = data->widow_height / 2;
 	// printf ("v1.y %i, v2.y:%i\n", v1.y, v2.y);
-	fromxs = get_screen_x(v1.x, v1.z, r) - get_origin_x(0, 0, r) + xc;
-	fromys = get_screen_y(v1.x, v1.z, v1.y, r) - get_origin_y(0, 0, 1, r) + yc;
-	toxs = get_screen_x(v2.x, v2.z, r) - get_origin_x(0, 0, r) + xc;
-	toys = get_screen_y(v2.x, v2.z, v2.y, r) - get_origin_y(0, 0, 1, r) + yc;
-	// printf ("from : %d, %d to : %d, %d\n", fromxs, fromys, toxs,toys);
-	draw_line(fromxs,fromys, toxs,toys, mlx_ptr, win_ptr, data);
+	// printf ("h = %i\n",tab[data->row/2][data->col/2]);
+	fromxs = get_screen_x(v1.col, v1.row, r) - get_origin_x(data->col/2, data->row/2, r) + xc;
+	fromys = get_screen_y(v1.col, v1.row, v1.height, r) - get_origin_y(data->col/2, data->row/2, 1, r) + yc;
+	toxs = get_screen_x(v2.col, v2.row, r) - get_origin_x(data->col/2, data->row/2, r) + xc;
+	toys = get_screen_y(v2.col, v2.row, v2.height, r) - get_origin_y(data->col/2, data->row/2, 1, r) + yc;
+	printf ("from : %d, %d to : %d, %d\n\n", fromxs, fromys, toxs,toys);
+	draw_line(fromxs,fromys, toxs,toys, mlx_ptr, win_ptr, data, v1.color);
 }
 
-t_vector3	set_vector3(int x, int y, int z)
+t_dot	set_dot(int x, char *str, int z)
 {
-	t_vector3	v1;
+	t_dot	v1;
+	char	*color;
 	
-	v1.x = x;
-	v1.y = y;
-	v1.z = z;
-
+	v1.row = x;
+	v1.col = z;
+	color = ft_strrchr(color, ',');
+	if (color)
+	{
+		*color = '\0';
+		color++;
+		v1.color = ft_atoi(color);
+	}
+	else
+		v1.color = 0x00FFFFFF;
+	v1.height = ft_atoi(str);
+	printf("height : %f, Color : %i\n", v1.height, v1.color);
 	return v1;
 }
 
-void iterate_entire_iso(int r, void* mlx_ptr, void* win_ptr, t_data *img, int** tab)
+void iterate_entire_iso(void* mlx_ptr, void* win_ptr, t_data *img, char** tab)
 {
 	int i = 0;
 	int j = 0;
-	// int x = data->row;
-	// int y = data->col;
-	// printf("x : %i\n", data->row);
-	// printf("y : %i\n", data->col);
+	int r = img->edgel;
 
-	t_vector3	v1;
-	t_vector3	v2;
+	t_dot	v1;
+	t_dot	v2;
 
-	while (j < img->col)
+	while (i < img->row)
 	{
-		i = 0;
-		while (i < img->row)
+		j = 0;
+		while (j < img->col)
 		{
 			if (j + 1 < img->col)
 			{
-				printf("(%i, %i)-> (%i, %i)\n", i, j, i, j+1);
-				printf("(height %i)-> (height%i)\n", tab[i][j], tab[i][j+1]);
-
-				v1 = set_vector3(i, tab[i][j], j);
-				v2 = set_vector3(i, tab[i][j+1], j + 1);
-				// printf("\t1***i : %i, j: %i\n", i, j);
-				// printf("1) from v1 : %i, %i, height : %i\n", v1.x, v1.z, v1.y);
-				// printf("1) to v2 : %i, %i, height : %i\n", v2.x, v2.z, v2.y);
-
+				v1 = set_dot(i,&tab[i][j], j);
+				v2 = set_dot(i,&tab[i][j+1], j + 1);
 				convert_world_to_screen(v1, v2, r, mlx_ptr, win_ptr, img);
 			}
 			if (i + 1 < img->row)
 			{
-				printf("(%i, %i)-> (%i, %i)\n", i, j, i+1, j);
-				printf("(height %i)-> (height%i)\n", tab[i][j], tab[i+1][j]);
-				// printf("Helo\n");
-				v1 = set_vector3(i, tab[i][j], j);
-				v2 = set_vector3(i + 1, tab[i+1][j], j);
-				// printf("tab[0][2] : %i\n", tab[0][2]);
-				// printf("\t2***i : %i, j: %i\n", i, j);
-				// printf("2) from v1 : %i, %i, height : %i\n", v1.x, v1.z, v1.y);
-				// printf("2) to v2 : %i, %i, height : %i\n", v2.x, v2.z, v2.y);
-
+				v1 = set_dot( i,&tab[i][j], j);
+				v2 = set_dot( i + 1, &tab[i+1][j], j);
 				convert_world_to_screen(v1, v2, r, mlx_ptr, win_ptr, img);
 			}
-			i += 1;
+			j += 1;
 		}
-		j += 1;
+		i += 1;
 	}
 }
 static int	count_split(const char *str, char charset)
@@ -212,7 +208,7 @@ static int	count_split(const char *str, char charset)
 	return (counter);
 }
 
-int	*put_data_in_table(int *tab, char *line, int totalNumData)
+char	**put_data_in_table(char **tab, char *line, int totalNumData)
 {
 	char	*copy;
 	char	*start_pos;
@@ -228,8 +224,8 @@ int	*put_data_in_table(int *tab, char *line, int totalNumData)
 		while(*copy && *copy != ' ')
 			copy++;
 		*copy = '\0';
-		tab[countData] = ft_atoi(start_pos);
-		printf("element is : %i\n",tab[countData]);
+		tab[countData] = start_pos;
+		printf("element is : %s\n",	tab[countData]);
 		countData++;
 		if(countData < totalNumData)
 			copy++;
@@ -237,55 +233,93 @@ int	*put_data_in_table(int *tab, char *line, int totalNumData)
 	return tab;
 }
 
-int	**parsing_fdf(char *file_name, t_data *img)
+int	count_nl(char *file_name)
 {
-	int		**tab;
+	int	read_byte;
+	int	counter;
+	char	*line;
+	int fd;
+
+	counter = -1;
+	fd = open(file_name, O_RDONLY);
+	line = "a";
+	while(line)
+	{
+		counter += 1;
+		line = get_next_line(fd);
+	}
+	close(fd);
+	// free(line);
+	return (counter);
+}
+char	***create_table(int row, int col)
+{
+	char	***tab;
+	int			i;
+
+	i = 0;
+	tab = (char ***)malloc(row * sizeof(char **));
+	if (!tab)
+		return NULL;
+	while (i <row)
+	{
+		tab[i] = (char**)malloc(col * sizeof(char*));
+		if (!tab[i])
+			return NULL;
+		i++;
+	}
+	return tab;
+}
+char	***parsing_fdf(char *file_name, t_data *img)
+{
+	char	***tab;
 	char	*line;
 	int		counterRow;
 	int		counterCol;
 	int 	fd;
 	int		i;
 	int 	j;
-
+	char	**tmp;
 	i = 0;
-	counterRow = 0;
+
+	counterRow = count_nl(file_name);
 	fd = open(file_name, O_RDONLY);
 	if (fd == -1)
 		return NULL;
-	tab = (int**)malloc(1 * sizeof(int *));
+	tab = (char***)malloc(counterRow * sizeof(char **));
 	if(!tab)
 		return NULL;
+	counterRow = 0;
 	line = "a";
 	while(line)
 	{
 		line = get_next_line(fd);
+		// printf("%s\n", line);
 		if(line)
-		{
-			counterRow += 1;
-			tab = (int**)realloc(tab, counterRow * sizeof(int*));
-			if(!tab)
-				return NULL;
+		{	
+			counterRow++;
 			counterCol = count_split(line, ' ');
-			// printf("counterCol : %i\n", counterCol);
-			tab[counterRow-1] = (int*)malloc(counterCol * sizeof(int));
+			tab[counterRow-1] = (char**)malloc(counterCol * sizeof(char*));
 			if(!tab[counterRow-1])
 				return NULL;
 			tab[counterRow-1] = put_data_in_table(tab[counterRow-1], line, counterCol);
 			j = 0;
 			while(j < counterCol)
 			{
-				// printf("tab[%i][%i], %i\n",counterRow-1, j,tab[counterRow-1][j]);
+				printf("tab[%i][%i], %s\n",counterRow-1, j,tab[counterRow-1][j]);
 				j++;
 			}
 		}
 	}
 	img->row = counterRow;
 	img->col = counterCol;
+
+	img->edgel = img->window_wigth / (counterRow + counterCol - 2) / cos(26.567 * M_PI / 180);
 	close(fd);
 	free(line);
 	return tab;
 }
-void	read_table(int **tab, t_data *img)
+void	read_table(char **tab, t_data *img)
 {
 	int	i;
 	int	j;
@@ -307,23 +341,21 @@ void	read_table(int **tab, t_data *img)
 
 int	main(void)
 {
-	int	**tab;
+	char	***tab;
 	void	*mlx_ptr;
 	void	*win_ptr;
 	t_data	img;
-	int edgel = 70;
+	// int edgel = 70;
 	int fd;
 	int row = 3;
 	int col = 3;
-	// tab = create_table(row, col);
 
-	tab = parsing_fdf("test.fdf", &img);
-	// printf("col : %i\n",img.col);
-	// printf("row : %i\n",img.row);
-	// read_table(tab, &img);
-	img.window_wigth = 500;
-	img.widow_height = 500;
+	img.window_wigth = 1500;
+	img.widow_height = 1000;
 
+	tab = parsing_fdf("test_maps/elem-col.fdf", &img);
+	if (!tab)
+		return 0;
 	mlx_ptr = mlx_init();
 	if (!mlx_ptr)
 		return (0);
@@ -332,8 +364,9 @@ int	main(void)
 		return (0);
 	img.img = mlx_new_image(mlx_ptr, img.window_wigth, img.widow_height );
 	img.addr = mlx_get_data_addr(img.img, &img.bits_per_pixel, &img.line_length, &img.endian);
-	iterate_entire_iso(edgel, mlx_ptr, win_ptr, &img, tab);
+	iterate_entire_iso(mlx_ptr, win_ptr, &img, tab);
 	
 	mlx_put_image_to_window(mlx_ptr, win_ptr, img.img, 0,0);
 	mlx_loop(mlx_ptr);
 }
+// either 1 or 0 . everything is in int.
