@@ -22,10 +22,10 @@ typedef struct s_data{
 }	t_data;
 
 typedef struct s_dot{
-	int		row;
-	float	height;
-	int		col;
-	int		color;
+	int	row;
+	int	height;
+	int	col;
+	int	color;
 } t_dot;
 
 void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
@@ -132,8 +132,9 @@ void convert_world_to_screen(t_dot v1, t_dot v2,int r, void * mlx_ptr, void * wi
 	fromys = get_screen_y(v1.col, v1.row, v1.height, r) - get_origin_y(data->col/2, data->row/2, 1, r) + yc;
 	toxs = get_screen_x(v2.col, v2.row, r) - get_origin_x(data->col/2, data->row/2, r) + xc;
 	toys = get_screen_y(v2.col, v2.row, v2.height, r) - get_origin_y(data->col/2, data->row/2, 1, r) + yc;
-	printf ("from : %d, %d to : %d, %d\n\n", fromxs, fromys, toxs,toys);
-	draw_line(fromxs,fromys, toxs,toys, mlx_ptr, win_ptr, data, v1.color);
+	printf ("from : %d, %d to : %d, %d, color : %i\n\n", fromxs, fromys, toxs,toys, v1.color);
+	// draw_line(fromxs,fromys, toxs,toys, mlx_ptr, win_ptr, data, v1.color);
+	draw_line(fromxs,fromys, toxs,toys, mlx_ptr, win_ptr, data, 16711680);
 }
 
 t_dot	set_dot(int x, char *str, int z)
@@ -143,7 +144,7 @@ t_dot	set_dot(int x, char *str, int z)
 	
 	v1.row = x;
 	v1.col = z;
-	color = ft_strrchr(color, ',');
+	color = ft_strrchr(str, ',');
 	if (color)
 	{
 		*color = '\0';
@@ -153,11 +154,11 @@ t_dot	set_dot(int x, char *str, int z)
 	else
 		v1.color = 0x00FFFFFF;
 	v1.height = ft_atoi(str);
-	printf("height : %f, Color : %i\n", v1.height, v1.color);
+	printf("height : %d, Color : %i\n", v1.height, v1.color);
 	return v1;
 }
 
-void iterate_entire_iso(void* mlx_ptr, void* win_ptr, t_data *img, char** tab)
+void iterate_entire_iso(void* mlx_ptr, void* win_ptr, t_data *img, char*** tab)
 {
 	int i = 0;
 	int j = 0;
@@ -166,6 +167,7 @@ void iterate_entire_iso(void* mlx_ptr, void* win_ptr, t_data *img, char** tab)
 	t_dot	v1;
 	t_dot	v2;
 
+	printf("1 Hello\n");
 	while (i < img->row)
 	{
 		j = 0;
@@ -173,14 +175,14 @@ void iterate_entire_iso(void* mlx_ptr, void* win_ptr, t_data *img, char** tab)
 		{
 			if (j + 1 < img->col)
 			{
-				v1 = set_dot(i,&tab[i][j], j);
-				v2 = set_dot(i,&tab[i][j+1], j + 1);
+				v1 = set_dot(i,tab[i][j], j);
+				v2 = set_dot(i,tab[i][j+1], j + 1);
 				convert_world_to_screen(v1, v2, r, mlx_ptr, win_ptr, img);
 			}
 			if (i + 1 < img->row)
 			{
-				v1 = set_dot( i,&tab[i][j], j);
-				v2 = set_dot( i + 1, &tab[i+1][j], j);
+				v1 = set_dot( i,tab[i][j], j);
+				v2 = set_dot( i + 1, tab[i+1][j], j);
 				convert_world_to_screen(v1, v2, r, mlx_ptr, win_ptr, img);
 			}
 			j += 1;
@@ -350,10 +352,11 @@ int	main(void)
 	int row = 3;
 	int col = 3;
 
-	img.window_wigth = 1500;
-	img.widow_height = 1000;
+	// printf("%i\n", 0xFF0000);
+	img.window_wigth = 700;
+	img.widow_height = 500;
 
-	tab = parsing_fdf("test_maps/elem-col.fdf", &img);
+	tab = parsing_fdf("test_maps/42.fdf", &img);
 	if (!tab)
 		return 0;
 	mlx_ptr = mlx_init();
