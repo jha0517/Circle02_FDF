@@ -36,6 +36,8 @@ void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
 	*(unsigned int*)offset = color;
 }
 
+
+
 void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t_data *data, int color)
 {
 	int	x = x1;
@@ -97,11 +99,11 @@ void draw_line(int x1, int y1, int x2, int y2, void * mlx_ptr, void * win_ptr, t
 		}
 	}
 }
-float get_origin_x(int x, int z, int r)
+float get_origin_x(float x, float z, int r)
 {
 	return (x - z) * cos(26.567 * M_PI / 180) * r;
 }
-float get_origin_y(int x, int z, int height, int r)
+float get_origin_y(float x, float z, int height, int r)
 {
 	return (((x + z + 1) * sin(26.567 * M_PI / 180) - height) * r);
 }
@@ -128,13 +130,47 @@ void convert_world_to_screen(t_dot v1, t_dot v2,int r, void * mlx_ptr, void * wi
 	yc = data->widow_height / 2;
 	// printf ("v1.y %i, v2.y:%i\n", v1.y, v2.y);
 	// printf ("h = %i\n",tab[data->row/2][data->col/2]);
-	fromxs = get_screen_x(v1.col, v1.row, r) - get_origin_x(data->col/2, data->row/2, r) + xc;
-	fromys = get_screen_y(v1.col, v1.row, v1.height, r) - get_origin_y(data->col/2, data->row/2, 1, r) + yc;
-	toxs = get_screen_x(v2.col, v2.row, r) - get_origin_x(data->col/2, data->row/2, r) + xc;
-	toys = get_screen_y(v2.col, v2.row, v2.height, r) - get_origin_y(data->col/2, data->row/2, 1, r) + yc;
-	printf ("from : %d, %d to : %d, %d, color : %i\n\n", fromxs, fromys, toxs,toys, v1.color);
-	// draw_line(fromxs,fromys, toxs,toys, mlx_ptr, win_ptr, data, v1.color);
-	draw_line(fromxs,fromys, toxs,toys, mlx_ptr, win_ptr, data, 16711680);
+	// printf("data->col/2: %f, data->row/2: %f\n",data->col/2.0, data->row/2.0);
+	fromxs = get_screen_x(v1.col, v1.row, r) - get_origin_x(data->col/2.0, data->row/2.0, r) + xc;
+	fromys = get_screen_y(v1.col, v1.row, v1.height, r) - get_origin_y(data->col/2.0, data->row/2.0, 1, r) + yc;
+	toxs = get_screen_x(v2.col, v2.row, r) - get_origin_x(data->col/2.0, data->row/2.0, r) + xc;
+	toys = get_screen_y(v2.col, v2.row, v2.height, r) - get_origin_y(data->col/2.0, data->row/2.0, 1, r) + yc;
+	// printf ("from : %d, %d to : %d, %d, color : %i\n\n", fromxs, fromys, toxs,toys, v1.color);
+	draw_line(fromxs,fromys, toxs,toys, mlx_ptr, win_ptr, data, v2.color);
+	// draw_line(fromxs,fromys, toxs,toys, mlx_ptr, win_ptr, data, 16711680);
+}
+
+int	find_inbase2(char c, char *str)
+{
+	int	i;
+
+	i = 0;
+	while (str[i])
+	{
+		if (c == str[i])
+			return (i);
+		i++;
+	}
+	return (0);
+}
+
+int	convert_from_str_hex_to_decimal(char *str)
+{
+	int	i;
+	int	sum;
+	int	len;
+
+	i = 0;
+	sum = 0;
+	len = ft_strlen(str)-1;
+	while (str[i] && 0 <= len)
+	{
+		// printf("power, 16 of power %i, len: %i, str[len] = %c\n", i+1, len, str[len]);
+		sum += ft_recursive_power(16, i) * find_inbase2(str[len], "0123456789ABCDEF");
+		i++;
+		len--;
+	}
+	return (sum);
 }
 
 t_dot	set_dot(int x, char *str, int z)
@@ -144,17 +180,18 @@ t_dot	set_dot(int x, char *str, int z)
 	
 	v1.row = x;
 	v1.col = z;
-	color = ft_strrchr(str, ',');
+	color = ft_strchr(str, ',');
 	if (color)
 	{
 		*color = '\0';
-		color++;
-		v1.color = ft_atoi(color);
+		color+=3;
+		v1.color = convert_from_str_hex_to_decimal(color);
+		printf("color detected : %i\n", v1.color);
 	}
 	else
 		v1.color = 0x00FFFFFF;
 	v1.height = ft_atoi(str);
-	printf("height : %d, Color : %i\n", v1.height, v1.color);
+	// printf("height : %d, Color : %i\n", v1.height, v1.color);
 	return v1;
 }
 
@@ -167,7 +204,6 @@ void iterate_entire_iso(void* mlx_ptr, void* win_ptr, t_data *img, char*** tab)
 	t_dot	v1;
 	t_dot	v2;
 
-	printf("1 Hello\n");
 	while (i < img->row)
 	{
 		j = 0;
@@ -315,8 +351,10 @@ char	***parsing_fdf(char *file_name, t_data *img)
 	}
 	img->row = counterRow;
 	img->col = counterCol;
-
-	img->edgel = img->window_wigth / (counterRow + counterCol - 2) / cos(26.567 * M_PI / 180);
+	// printf("counterRow : %i, counterCol : %i\n", img->row, img->col);
+	img->edgel = img->window_wigth / cos(26.567 * M_PI / 180) / (counterRow + counterCol - 2) ;
+	printf("edge length :%i\n", img->edgel);
+	// printf("width * cos : %f\n",img->window_wigth / cos(26.567 * M_PI / 180));
 	close(fd);
 	free(line);
 	return tab;
@@ -352,11 +390,10 @@ int	main(void)
 	int row = 3;
 	int col = 3;
 
-	// printf("%i\n", 0xFF0000);
 	img.window_wigth = 700;
-	img.widow_height = 500;
+	img.widow_height = 600;
 
-	tab = parsing_fdf("test_maps/42.fdf", &img);
+	tab = parsing_fdf("test.fdf", &img);
 	if (!tab)
 		return 0;
 	mlx_ptr = mlx_init();
