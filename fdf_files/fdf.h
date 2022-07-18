@@ -6,12 +6,10 @@
 /*   By: hyunahjung <hyunahjung@student.42.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/07/17 16:58:56 by hyunahjung        #+#    #+#             */
-/*   Updated: 2022/07/18 10:33:31 by hyunahjung       ###   ########.fr       */
+/*   Updated: 2022/07/18 13:08:30 by hyunahjung       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef	FDF_H
-# define	FDF_H
 #include	<stdio.h>
 #include	<unistd.h>
 #include	<stdio.h>
@@ -60,5 +58,3 @@ void	draw_line(t_point v1, t_point v2, t_data *data);
 int		get_col(int isX, int current, t_point v1, t_point v2);
 void	mlx_hook_interaction(t_data *img);
 int		convert_from_str_hex_to_decimal(char *str);
-
-#endif

@@ -6,12 +6,11 @@
 /*   By: hyunahjung <hyunahjung@student.42.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/07/17 17:02:54 by hyunahjung        #+#    #+#             */
-/*   Updated: 2022/07/18 10:28:56 by hyunahjung       ###   ########.fr       */
+/*   Updated: 2022/07/18 13:08:18 by hyunahjung       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "fdf.h"
-
 
 int	key_press(int keycode)
 {
