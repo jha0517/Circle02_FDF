@@ -6,36 +6,19 @@
 /*   By: hyunahjung <hyunahjung@student.42.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/07/17 17:00:04 by hyunahjung        #+#    #+#             */
-/*   Updated: 2022/07/18 10:24:25 by hyunahjung       ###   ########.fr       */
+/*   Updated: 2022/07/19 06:43:55 by hyunahjung       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "fdf.h"
 
-void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
+void	my_mlx_pixel_put(t_data *data, t_point v1, int color)
 {
 	char	*offset;
 
-	offset = data->addr + (y * data->linel + x * (data->bpp / 8));
+	printf("pixel put\n");
+	offset = data->addr + ((v1.y + data->offsety) * data->linel + (v1.x + data->offsetx) * (data->bpp / 8));
 	*(unsigned int *)offset = color;
-}
-
-void	get_value(int *dx, int *dy, int *xvalue, int *yvalue)
-{
-	if (*dx < 0)
-	{
-			*xvalue = -1;
-			*dx *= -1;
-	}
-	else
-		*xvalue = 1;
-	if (dy < 0)
-	{
-		*yvalue = -1;
-		*dy *= -1;
-	}
-	else
-		*yvalue = 1;
 }
 
 void	draw_line(t_point v1, t_point v2, t_data *data)
@@ -48,13 +31,27 @@ void	draw_line(t_point v1, t_point v2, t_data *data)
 	v1.y = v1.screeny;
 	dx = v2.screenx - v1.screenx;
 	dy = v2.screeny - v1.screeny;
-	get_value(&dx, &dy, &v1.xvalue, &v1.yvalue);
+	if (dx < 0)
+	{
+			v1.xvalue = -1;
+			dx *= -1;
+	}
+	else
+		v1.xvalue = 1;
+	if (dy < 0)
+	{
+		v1.yvalue = -1;
+		dy *= -1;
+	}
+	else
+		v1.yvalue = 1;
 	p = 2 * dy - dx;
 	if (dx > dy)
 	{
 		while (v1.x != v2.screenx)
 		{
-			my_mlx_pixel_put(data, v1.x, v1.y, get_col(1, v1.x, v1, v2));
+			if (v1.x > 0 && v1.y > 0)
+				my_mlx_pixel_put(data, v1, get_col(1, v1.x, v1, v2));
 			v1.x += v1.xvalue;
 			if (p < 0)
 				p = p + (2 * dy);
@@ -69,7 +66,8 @@ void	draw_line(t_point v1, t_point v2, t_data *data)
 	{
 		while (v1.y != v2.screeny)
 		{
-			my_mlx_pixel_put(data, v1.x, v1.y, get_col(0, v1.y, v1, v2));
+			if (v1.x > 0 && v1.y > 0)
+				my_mlx_pixel_put(data, v1, get_col(0, v1.y, v1, v2));
 			v1.y += v1.yvalue;
 			if (p < 0)
 				p = p + (2 * dx);

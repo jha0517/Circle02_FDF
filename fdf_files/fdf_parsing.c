@@ -6,7 +6,7 @@
 /*   By: hyunahjung <hyunahjung@student.42.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/07/18 09:47:09 by hyunahjung        #+#    #+#             */
-/*   Updated: 2022/07/18 13:07:45 by hyunahjung       ###   ########.fr       */
+/*   Updated: 2022/07/19 06:55:43 by hyunahjung       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,7 +74,7 @@ int	count_nl(char *file_name)
 	return (counter);
 }
 
-char	***parsing_fdf(char ***tab, char *file_name, t_data *img)
+char	***parsing_fdf(char *file_name, t_data *img)
 {
 	char	*line;
 	int		fd;
@@ -86,8 +86,8 @@ char	***parsing_fdf(char ***tab, char *file_name, t_data *img)
 	fd = open(file_name, O_RDONLY);
 	if (fd == -1)
 		return (NULL);
-	tab = (char ***)malloc(img->row * sizeof(char **));
-	if (!tab)
+	img->tab = (char ***)malloc(img->row * sizeof(char **));
+	if (!img->tab)
 		return (NULL);
 	img->row = 0;
 	line = "a";
@@ -98,17 +98,17 @@ char	***parsing_fdf(char ***tab, char *file_name, t_data *img)
 		{	
 			img->row++;
 			img->col = count_split(line, ' ');
-			tab[img->row - 1] = (char **)malloc(img->col * sizeof(char *));
-			if (!tab[img->row - 1])
+			img->tab[img->row - 1] = (char **)malloc(img->col * sizeof(char *));
+			if (!img->tab[img->row - 1])
 				return (NULL);
-			tab[img->row - 1] = put_in_tab(tab[img->row - 1], line, img->col);
+			img->tab[img->row - 1] = put_in_tab(img->tab[img->row - 1], line, img->col);
 			j = 0;
 		}
 	}
-	img->edgel = (img->window_wigth / cos(26.567 * M_PI / 180) / (img->row + img->col - 2)) * 0.8;
+	img->edgel = (img->window_wigth / cos(26.567 * M_PI / 180) / (img->row + img->col - 2)) * 0.9;
 	if (img->edgel == 0)
 		return (NULL);
 	close(fd);
 	free(line);
-	return (tab);
+	return (img->tab);
 }
