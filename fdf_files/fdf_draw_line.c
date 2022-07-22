@@ -6,7 +6,7 @@
 /*   By: hyunahjung <hyunahjung@student.42.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/07/17 17:00:04 by hyunahjung        #+#    #+#             */
-/*   Updated: 2022/07/19 06:43:55 by hyunahjung       ###   ########.fr       */
+/*   Updated: 2022/07/22 06:03:20 by hyunahjung       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@ void	my_mlx_pixel_put(t_data *data, t_point v1, int color)
 {
 	char	*offset;
 
-	printf("pixel put\n");
+	// printf("pixel put\n");
 	offset = data->addr + ((v1.y + data->offsety) * data->linel + (v1.x + data->offsetx) * (data->bpp / 8));
 	*(unsigned int *)offset = color;
 }
