@@ -1,4 +1,4 @@
-# fdf
+# FDF
 FDF is a project for 42 school that aims to create a wireframe rendering program using the MiniLibX library. The program reads a map file as input, which contains information about the points and lines that make up the wireframe. The program then renders the wireframe using 3D projection and allows the user to rotate and zoom in on the image.
 
 ## Getting Started
